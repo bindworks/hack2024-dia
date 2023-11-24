@@ -1,5 +1,6 @@
 import { ReportParser } from "./parsers";
 import { dexcomParser } from "./parsers/dexcom";
+import { medtronik640GParser } from "./parsers/medtronik640G";
 import { pdfToText } from "./utils";
 
 export interface Classifier {
@@ -15,6 +16,9 @@ export function createClassifier(): Classifier {
         const pdfContents = await pdfToText(pdfPath);
         if (pdfContents.indexOf('Dexcom') > -1) {
             return dexcomParser;
+        }
+        if (pdfContents.indexOf('MiniMed 640G') > -1) {
+          return medtronik640GParser;
         }
     }
 }
