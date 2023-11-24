@@ -4,15 +4,21 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "runall": "npx tsc && find ./DATA -type f -name \\*.pdf | xargs -n 1 node src/index"
+    "runall": "npx tsc && find ./DATA -type f -name \\*.pdf | xargs -n 1 node src/index",
+    "test": "cross-env TS_NODE_FILES=true mocha -r ts-node/register $EXTRA_MOCHA_OPTS test/**/*.spec.ts"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@types/mocha": "^10.0.6",
     "@types/node": "^20.10.0",
     "@types/papaparse": "^5.3.13",
+    "@types/tmp": "^0.2.6",
+    "cross-env": "^7.0.3",
+    "mocha": "^10.2.0",
     "papaparse": "^5.4.1",
+    "tmp": "^0.2.1",
+    "ts-node": "^10.9.1",
     "typescript": "^5.3.2"
   }
 }
