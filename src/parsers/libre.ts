@@ -10,6 +10,8 @@ export const regexes = {
   pctTimeVeryLow: /(?:Velmi\s+nízká\s+hladina)|(?:Very Low\s+.+)\s+(\d+)%/,
   avgGlucose:
     /(?:Průměrná hodnota koncentrace glukózy)|(Average Glucose)\s+([\d,]+) mmol\/l/,
+  glucoseStd:
+    /(?:Variabilita hladin glukózy)|(?:Glucose Variability)\s+([\d,.]+)%/,
   date: /AGP (?:r|R)eport\s+(\d+|.+) (\d+|.+),? 2023 - (\d+|.+) (\d+|.+),? 2023 \(/m,
 };
 
@@ -61,6 +63,8 @@ export async function libreAGPParser(
 
   const periodStart = new Date(2023, months[startMonth], parseInt(startDay));
   const periodEnd = new Date(2023, months[endMonth], parseInt(endDay));
+
+  const glucoseStd = stringToNum(regexes.glucoseStd.exec(data)?.[1]);
   return {
     timeInRangeVeryHigh,
     timeInRangeHigh,
@@ -70,5 +74,6 @@ export async function libreAGPParser(
     averageGlucose: avgGlucose,
     periodStart,
     periodEnd,
+    stddevGlucose: glucoseStd,
   };
 }
