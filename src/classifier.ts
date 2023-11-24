@@ -22,7 +22,7 @@ export function createClassifier(): Classifier {
       return medtronik640GParser;
     }
 
-    if (pdfContents.indexOf("AGP report") > -1) {
+    if (pdfContents.indexOf("AGP") > -1) {
       return libreAGPParser;
     }
   }

@@ -26,31 +26,33 @@ export interface PdfToTextSettings {
 }
 
 export interface PdfTsvRecord {
-  level: number,
-  page_num: number,
-  par_num: number,
-  block_num: number,
-  line_num: number,
-  word_num: number,
-  left: number,
-  top: number,
-  width: number,
-  height: number,
-  conf: number,
-  text: string,
+  level: number;
+  page_num: number;
+  par_num: number;
+  block_num: number;
+  line_num: number;
+  word_num: number;
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+  conf: number;
+  text: string;
 }
 
 export async function pdfToTsv(
   pdfPath: string,
-  settings?: PdfToTextSettings,
+  settings?: PdfToTextSettings
 ): Promise<PdfTsvRecord[]> {
   const pdfTsvText = await pdfToText(pdfPath, { ...settings, tsv: true });
   const pdfTsv = papaparse.parse<PdfTsvRecord>(pdfTsvText, {
     header: true,
-    transform: (value, field) => field === 'text' ? value : parseFloat(value),
+    transform: (value, field) => (field === "text" ? value : parseFloat(value)),
   });
   return pdfTsv.data;
 }
+
+export const isNumeric = (n: string) => !isNaN(parseFloat(n)) && isFinite(+n);
 
 export async function pdfToText(
   pdfPath: string,
