@@ -22,6 +22,7 @@ export interface PdfToTextSettings {
   layout?: boolean;
   tsv?: boolean;
   raw?: boolean;
+  firstPage?: boolean;
 }
 
 export interface PdfTsvRecord {
@@ -40,9 +41,10 @@ export interface PdfTsvRecord {
 }
 
 export async function pdfToTsv(
-  pdfPath: string
+  pdfPath: string,
+  settings?: PdfToTextSettings,
 ): Promise<PdfTsvRecord[]> {
-  const pdfTsvText = await pdfToText(pdfPath, { tsv: true });
+  const pdfTsvText = await pdfToText(pdfPath, { ...settings, tsv: true });
   const pdfTsv = papaparse.parse<PdfTsvRecord>(pdfTsvText, {
     header: true,
     transform: (value, field) => field === 'text' ? value : parseFloat(value),
@@ -65,6 +67,11 @@ export async function pdfToText(
 
   if (settings?.raw) {
     command.push("-raw");
+  }
+
+  if (settings?.firstPage) {
+    command.push("-f 1");
+    command.push("-l 1");
   }
 
   command.push(`"${pdfPath}"`);
