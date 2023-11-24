@@ -150,6 +150,6 @@ export async function withTemporaryFile<T>(fn: (path: string) => Promise<T>, opt
   }
 }
 
-export function parseCzFloat(s: string): number {
+export function parseCzOrEnFloat(s: string): number {
   return parseFloat(s.replace(/,/, '.'));
 }

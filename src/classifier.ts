@@ -1,7 +1,7 @@
 import { ReportParser } from "./parsers";
 import { dexcomParser } from "./parsers/dexcom";
 import { libreAGPParser } from "./parsers/libre";
-import { medtronik640GParser } from "./parsers/medtronik640G";
+import { medtronik640GParser, medtronik780GParser, medtronikGuardianParser } from "./parsers/medtronik";
 import { pdfToText } from "./utils";
 
 export interface Classifier {
@@ -20,6 +20,12 @@ export function createClassifier(): Classifier {
     }
     if (pdfContents.indexOf("MiniMed 640G") > -1) {
       return medtronik640GParser;
+    }
+    if (pdfContents.indexOf("MiniMed 780G") > -1) {
+      return medtronik780GParser;
+    }
+    if (pdfContents.indexOf("Guardian™") > -1) {
+      return medtronikGuardianParser;
     }
 
     if (pdfContents.indexOf("AGP") > -1) {
