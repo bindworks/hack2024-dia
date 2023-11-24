@@ -46,17 +46,33 @@ export async function dexcomParser(pdfPath: string): Promise<ParsedData> {
     veryLow: dexcomRegexes.timeInRange.veryLow.exec(data)?.[1],
   };
 
-  console.log({
-    patientName,
-    timeFrame,
-    timeFrameStart,
-    timeFrameEnd,
-    timeAtCGM,
-    glucoseAvg,
-    glucoseStdvec,
-    GMI,
-    timeInRange,
-  });
+  if (
+    !timeFrame ||
+    !timeFrameStart ||
+    !timeFrameEnd ||
+    !patientName ||
+    !timeAtCGM ||
+    !glucoseAvg ||
+    !glucoseStdvec ||
+    !GMI ||
+    !timeInRange.veryHigh ||
+    !timeInRange.high ||
+    !timeInRange.moderate ||
+    !timeInRange.low ||
+    !timeInRange.veryLow
+  ) {
+    throw new Error("Could not parse Dexcom PDF");
+  }
 
-  return {};
+  return {
+    timeInRangeVeryHigh: parseFloat(timeInRange.veryHigh),
+    timeInRangeHigh: parseFloat(timeInRange.high),
+    timeInRangeNormal: parseFloat(timeInRange.moderate),
+    timeInRangeLow: parseFloat(timeInRange.low),
+    timeInRangeVeryLow: parseFloat(timeInRange.veryLow),
+
+    averageGlucose: parseFloat(glucoseAvg),
+    stddevGlucose: parseFloat(glucoseStdvec),
+    gmi: parseFloat(GMI),
+  };
 }
