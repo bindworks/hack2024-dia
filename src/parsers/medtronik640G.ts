@@ -1,10 +1,12 @@
 import { ParsedData } from ".";
-import { parseCzFloat, pdfToRgb, pdfToText, pdfToTsv } from "../utils";
+import { isNumeric, parseCzFloat, pdfToRgb, pdfToText, pdfToTsv, percentToGMI } from "../utils";
 
 export async function medtronik640GParser(pdfPath: string): Promise<ParsedData> {
     const result: ParsedData = {};
     const pdfTsv = await pdfToTsv(pdfPath, { firstPage: true });
-    await parseValuesInRange(160, 180, 320, 510, 190);
+    if (!await parseValuesInRange(160, 180, 320, 510, 190)) {
+      return { empty: true }
+    }
     const pdfText = await pdfToText(pdfPath, { layout: true });
 
     findInText(pdfText, /Používání senzoru \(za týden\)\s+(\d+)%/, (r) => result.timeActive = parseFloat(r[1]));
@@ -12,18 +14,21 @@ export async function medtronik640GParser(pdfPath: string): Promise<ParsedData> 
       result.averageGlucose = parseCzFloat(r[1]);
       result.stddevGlucose = parseCzFloat(r[2]);
     });
-
+    findInText(pdfText, /Variační koeficient \(%\)\s+((?:\d|,)+)%/, (r) => result.variationCoefficient = parseCzFloat(r[1]));
+    findInText(pdfText, /GMI\*\*\*\s+(?:((?:\d|,)+)%|--)/, (r) => {
+      if (isNumeric(r[1])) result.gmi = percentToGMI(parseCzFloat(r[1]))
+    });
 
     return result;
 
 
-    async function parseValuesInRange(xmin: number, xmax: number, ymin: number, ymax: number, xbar: number) {
+    async function parseValuesInRange(xmin: number, xmax: number, ymin: number, ymax: number, xbar: number): Promise<boolean> {
       const valuesInRange = pdfTsv.filter(r => r.left > xmin && r.left < xmax && r.top > ymin && r.top < ymax && /^\d+%$/.test(r.text));
 
       if (valuesInRange.length === 0) {
         const nedostupne = pdfTsv.find(r => r.left > xbar && r.left < xbar + 20 && r.top > ymin && r.top < ymax && r.text === 'Nedostupné');
         if (nedostupne) {
-          throw new Error('Data unavailable');
+          return false;
         }
         throw new Error('Could not find values in range');
       }
@@ -37,7 +42,7 @@ export async function medtronik640GParser(pdfPath: string): Promise<ParsedData> 
         result.timeInRangeNormal = parseFloat(valuesInRange[2].text);
         result.timeInRangeLow = parseFloat(valuesInRange[3].text);
         result.timeInRangeVeryLow = parseFloat(valuesInRange[4].text);
-        return;
+        return true;
       }
 
       // find the green one
@@ -58,6 +63,7 @@ export async function medtronik640GParser(pdfPath: string): Promise<ParsedData> 
       result.timeInRangeVeryHigh = greenOne-2 >= 0 ? parseFloat(valuesInRange[greenOne-2].text) : 0;
       result.timeInRangeLow = greenOne+1 < valuesInRange.length ? parseFloat(valuesInRange[greenOne+1].text) : 0;
       result.timeInRangeVeryLow = greenOne+2 < valuesInRange.length ? parseFloat(valuesInRange[greenOne+2].text) : 0;
+      return true;
     }
 }
 

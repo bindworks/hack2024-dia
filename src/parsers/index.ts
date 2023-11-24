@@ -1,4 +1,5 @@
 export interface ParsedData {
+    empty?: boolean,
     periodStart?: Date,
     periodEnd?: Date,
     /**

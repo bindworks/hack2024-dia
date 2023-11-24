@@ -54,7 +54,7 @@ export async function pdfToTsv(
   return pdfTsv.data;
 }
 
-export const isNumeric = (n: string) => !isNaN(parseFloat(n)) && isFinite(+n);
+export const isNumeric = (n?: string) => typeof n !== 'undefined' && !isNaN(parseFloat(n)) && isFinite(+n);
 
 export const percentToGMI = (percent: number) => (percent - 2.152) / 0.09148;
 export const mmolToPercentGMI = (mmol: number) => 0.09148 * mmol + 2.152;
