@@ -1,5 +1,5 @@
 import { ParsedData } from ".";
-import { isNumeric, pdfToText } from "../utils";
+import { isNumeric, pdfToText, stringToNum } from "../utils";
 import { months } from "./constants";
 
 export const regexes = {
@@ -14,13 +14,6 @@ export const regexes = {
   glucoseStd:
     /(?:(?:Variabilita hladin glukózy)|(?:Glucose Variability))\s+([\d,.]+)%/,
   date: /AGP (?:r|R)eport\s+(\d+|.+) (\d+|.+),? 202(?:\d) - (\d+|.+) (\d+|.+),? 202(?:\d) \(/m,
-};
-
-const stringToNum = (str: string | undefined) => {
-  if (str) {
-    return parseInt(str);
-  }
-  throw new Error("stringToNum: str is undefined");
 };
 
 export async function libreAGPParser(
