@@ -25,6 +25,7 @@ export interface PdfToTextSettings {
   tsv?: boolean;
   raw?: boolean;
   firstPage?: boolean;
+  secondPage?: boolean;
 }
 
 export interface PdfTsvRecord {
@@ -80,6 +81,11 @@ export async function pdfToText(
   if (settings?.firstPage) {
     command.push("-f 1");
     command.push("-l 1");
+  }
+
+  if (settings?.secondPage) {
+    command.push("-f 2");
+    command.push("-l 2");
   }
 
   command.push(`"${pdfPath}"`);
@@ -178,3 +184,12 @@ export const stringToNum = (str: string | undefined) => {
   }
   throw new Error("stringToNum: str is undefined");
 };
+
+export function findInText(text: string, regex: RegExp, assign: (res: RegExpExecArray) => void) {
+  const match = regex.exec(text);
+  if (!match) {
+    throw new Error('No match');
+  }
+  assign(match);
+}
+

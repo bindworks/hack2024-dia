@@ -1,5 +1,5 @@
 import { ParsedData } from ".";
-import { stringToNum, pdfToRgb, pdfToText, pdfToTsv, percentToGMI } from "../utils";
+import { stringToNum, pdfToRgb, pdfToText, pdfToTsv, percentToGMI, findInText } from "../utils";
 
 export async function medtronik640GParser(pdfPath: string): Promise<ParsedData> {
     const result: ParsedData = {};
@@ -155,14 +155,6 @@ async function parseValuesInRange(pdfPath: string, xmin: number, xmax: number, y
   result.timeInRangeLow = greenOne+1 < valuesInRange.length ? parseFloat(valuesInRange[greenOne+1].text) : 0;
   result.timeInRangeVeryLow = greenOne+2 < valuesInRange.length ? parseFloat(valuesInRange[greenOne+2].text) : 0;
   return result;
-}
-
-function findInText(text: string, regex: RegExp, assign: (res: RegExpExecArray) => void) {
-  const match = regex.exec(text);
-  if (!match) {
-    throw new Error('No match');
-  }
-  assign(match);
 }
 
 function isGreen(n: number[][]): boolean {
