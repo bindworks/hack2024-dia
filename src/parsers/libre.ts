@@ -10,18 +10,15 @@ export const regexes = {
   pctTimeLow: /(?:(?:Nízká\s+hladina)|(?:Low\s+.+))\s+(\d+)%/,
   pctTimeVeryLow: /(?:(?:Velmi\s+nízká\s+hladina)|(?:Very Low\s+.+))\s+(\d+)%/,
   avgGlucose:
-    /(?:(?:Průměrná hodnota koncentrace glukózy)|(?:Average Glucose))\s+([\d,]+) mmol\/l/,
+    /(?:(?:Průměrná hodnota koncentrace glukózy)|(?:Average Glucose))\s+([\d,]+) mmol\/l/i,
   glucoseStd:
     /(?:(?:Variabilita hladin glukózy)|(?:Glucose Variability))\s+([\d,.]+)%/,
-  date: /AGP (?:r|R)eport\s+(\d+|.+) (\d+|.+),? 202(?:\d) - (\d+|.+) (\d+|.+),? 202(?:\d) \(/m,
-  timeActive:
-    /(?:(?:Doba aktivního senzoru:)|(?:Time CGM Active:))\s+([\d.,]+)%/,
-  gmi: /\(GMI\)\s+([\d.,]+)%/g,
+  date: /AGP [rR]eport\s+(.+) (.+),? 202(?:\d) - (.+) (.+),? 202(?:\d) \(/m,
+  timeActive: /(?:Doba aktivního senzoru:|Time CGM Active:)\s+([\d.,]+)%/,
+  gmi: /\(GMI\)\s+([\d.,]+)%/,
 };
 
-export async function libreAGPParser(
-  pdfPath: string
-): Promise<Partial<ParsedData>> {
+export async function libreAGPParser(pdfPath: string): Promise<ParsedData> {
   const data = await pdfToText(pdfPath, { layout: true });
 
   const timeInRangeVeryHigh = stringToNum(

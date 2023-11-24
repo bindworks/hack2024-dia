@@ -2,7 +2,12 @@ import { ReportParser } from "./parsers";
 import { dexcomParser } from "./parsers/dexcom";
 import { glookoPatientCopyParser } from "./parsers/glooko";
 import { libreAGPParser } from "./parsers/libre";
-import { medtronik640GParser, medtronik780GParser, medtronikGuardianParser } from "./parsers/medtronik";
+import { libreSnapshotParser } from "./parsers/libre-snapshot";
+import {
+  medtronik640GParser,
+  medtronik780GParser,
+  medtronikGuardianParser,
+} from "./parsers/medtronik";
 import { pdfToText } from "./utils";
 
 export interface Classifier {
@@ -29,13 +34,19 @@ export function createClassifier(): Classifier {
       return medtronikGuardianParser;
     }
 
-    if (pdfContents.indexOf("Glooko") > -1 && pdfContents.indexOf("KOPIE PACIENTA") > -1) {
+    if (
+      pdfContents.indexOf("Glooko") > -1 &&
+      pdfContents.indexOf("KOPIE PACIENTA") > -1
+    ) {
       return glookoPatientCopyParser;
     }
 
-
-    if (pdfContents.indexOf("AGP") > -1) {
+    if (pdfContents.indexOf("AGP") > -1 && pdfContents.indexOf("Libre") > -1) {
       return libreAGPParser;
+    }
+
+    if (pdfContents.indexOf("Snapshot") && pdfContents.indexOf("Libre") > -1) {
+      return libreSnapshotParser;
     }
   }
 }
