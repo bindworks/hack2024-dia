@@ -1,25 +1,22 @@
 import { ParsedData } from ".";
-import { isNumeric, pdfToText } from "../utils";
+import { isNumeric, pdfToText, stringToNum } from "../utils";
 import { months } from "./constants";
 
 export const regexes = {
-  pctTimeVeryBig: /(?:Velmi\s+vysoká\s+hladina)|(?:Very\s+High\s+.+)\s+(\d+)%/,
-  pctTimeBig: /(?:Vysoká\s+hladina)|(?:High\s+.+)\s+(\d+)%/,
-  pctTimeFinish: /(?:Cílové rozmezí)|(?:Target Range\s+.+)\s+(\d+)%/,
-  pctTimeLow: /(?:Nízká\s+hladina)|(?:Low\s+.+)\s+(\d+)%/,
-  pctTimeVeryLow: /(?:Velmi\s+nízká\s+hladina)|(?:Very Low\s+.+)\s+(\d+)%/,
+  pctTimeVeryBig:
+    /(?:(?:Velmi\s+vysoká\s+hladina)|(?:Very\s+High\s+.+))\s+(\d+)%/,
+  pctTimeBig: /(?:(?:Vysoká\s+hladina)|(?:High\s+.+))\s+(\d+)%/,
+  pctTimeFinish: /(?:(?:Cílové rozmezí)|(?:Target Range\s+.+))\s+(\d+)%/,
+  pctTimeLow: /(?:(?:Nízká\s+hladina)|(?:Low\s+.+))\s+(\d+)%/,
+  pctTimeVeryLow: /(?:(?:Velmi\s+nízká\s+hladina)|(?:Very Low\s+.+))\s+(\d+)%/,
   avgGlucose:
-    /(?:Průměrná hodnota koncentrace glukózy)|(Average Glucose)\s+([\d,]+) mmol\/l/,
+    /(?:(?:Průměrná hodnota koncentrace glukózy)|(?:Average Glucose))\s+([\d,]+) mmol\/l/,
   glucoseStd:
-    /(?:Variabilita hladin glukózy)|(?:Glucose Variability)\s+([\d,.]+)%/,
-  date: /AGP (?:r|R)eport\s+(\d+|.+) (\d+|.+),? 2023 - (\d+|.+) (\d+|.+),? 2023 \(/m,
-};
-
-const stringToNum = (str: string | undefined) => {
-  if (str) {
-    return parseInt(str);
-  }
-  throw new Error("stringToNum: str is undefined");
+    /(?:(?:Variabilita hladin glukózy)|(?:Glucose Variability))\s+([\d,.]+)%/,
+  date: /AGP (?:r|R)eport\s+(\d+|.+) (\d+|.+),? 202(?:\d) - (\d+|.+) (\d+|.+),? 202(?:\d) \(/m,
+  timeActive:
+    /(?:(?:Doba aktivního senzoru:)|(?:Time CGM Active:))\s+([\d.,]+)%/,
+  gmi: /\(GMI\)\s+([\d.,]+)%/g,
 };
 
 export async function libreAGPParser(
@@ -50,6 +47,7 @@ export async function libreAGPParser(
     : startDayOrMonth;
   const endDay = isNumeric(endDayOrMonth) ? endDayOrMonth : endMonthOrDay;
   const endMonth = isNumeric(endDayOrMonth) ? endMonthOrDay : endDayOrMonth;
+  const timeActive = stringToNum(regexes.timeActive.exec(data)?.[1]);
 
   [startDay, startMonth, endDay, endMonth].forEach((x) => {
     if (!x) {
@@ -63,8 +61,10 @@ export async function libreAGPParser(
 
   const periodStart = new Date(2023, months[startMonth], parseInt(startDay));
   const periodEnd = new Date(2023, months[endMonth], parseInt(endDay));
-
   const glucoseStd = stringToNum(regexes.glucoseStd.exec(data)?.[1]);
+  const variationCoefficient = stringToNum(regexes.gmi.exec(data)?.[1]);
+  const gmi = stringToNum(regexes.gmi.exec(data)?.[1]);
+
   return {
     timeInRangeVeryHigh,
     timeInRangeHigh,
@@ -75,5 +75,8 @@ export async function libreAGPParser(
     periodStart,
     periodEnd,
     stddevGlucose: glucoseStd,
+    timeActive,
+    gmi,
+    variationCoefficient,
   };
 }

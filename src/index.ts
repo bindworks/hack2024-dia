@@ -6,19 +6,21 @@ async function main(): Promise<number> {
   try {
     const parser = await classifier.classify(pdfPath);
     if (!parser) {
-      console.log(`${pdfPath}: ${JSON.stringify({ error: "unrecognized" })}`);
+      console.log(
+        `\x1b[31m${pdfPath}: ${JSON.stringify({
+          error: "unrecognized",
+        })}\x1b[0m`
+      );
       return 1;
     }
     const data = await parser(pdfPath);
-    console.log(`${pdfPath}: ${JSON.stringify(data)}`);
+    console.log(`\x1b[32mSUCCESS: ${pdfPath}: ${JSON.stringify(data)}\x1b[0m`);
     return 0;
   } catch (e) {
-    const err = e as Error;
     console.log(
-      `${pdfPath}: ${JSON.stringify({
-        error: err.message,
-        stack: err.stack,
-      })}`
+      `\x1b[31mERROR: ${pdfPath}: ${JSON.stringify({
+        error: String(e),
+      })}\x1b[0m`
     );
     return 2;
   }
