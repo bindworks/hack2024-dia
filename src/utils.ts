@@ -20,9 +20,13 @@ export async function execute(command: string): Promise<ExecuteOutput> {
 export interface PdfToTextSettings {
   layout?: boolean;
   tsv?: boolean;
+  raw?: boolean;
 }
 
-export async function pdfToText(pdfPath: string, settings?: PdfToTextSettings): Promise<string> {
+export async function pdfToText(
+  pdfPath: string,
+  settings?: PdfToTextSettings
+): Promise<string> {
   const command = ["pdftotext"];
   if (settings?.layout) {
     command.push("-layout");
@@ -30,6 +34,10 @@ export async function pdfToText(pdfPath: string, settings?: PdfToTextSettings): 
 
   if (settings?.tsv) {
     command.push("-tsv");
+  }
+
+  if (settings?.raw) {
+    command.push("-raw");
   }
 
   command.push(`"${pdfPath}"`);
