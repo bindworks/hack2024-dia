@@ -3,16 +3,17 @@ import { isNumeric, pdfToText } from "../utils";
 import { months } from "./constants";
 
 export const regexes = {
-  pctTimeVeryBig: /(?:Velmi\s+vysoká\s+hladina)|(?:Very\s+High\s+.+)\s+(\d+)%/,
-  pctTimeBig: /(?:Vysoká\s+hladina)|(?:High\s+.+)\s+(\d+)%/,
-  pctTimeFinish: /(?:Cílové rozmezí)|(?:Target Range\s+.+)\s+(\d+)%/,
-  pctTimeLow: /(?:Nízká\s+hladina)|(?:Low\s+.+)\s+(\d+)%/,
-  pctTimeVeryLow: /(?:Velmi\s+nízká\s+hladina)|(?:Very Low\s+.+)\s+(\d+)%/,
+  pctTimeVeryBig:
+    /(?:(?:Velmi\s+vysoká\s+hladina)|(?:Very\s+High\s+.+))\s+(\d+)%/,
+  pctTimeBig: /(?:(?:Vysoká\s+hladina)|(?:High\s+.+))\s+(\d+)%/,
+  pctTimeFinish: /(?:(?:Cílové rozmezí)|(?:Target Range\s+.+))\s+(\d+)%/,
+  pctTimeLow: /(?:(?:Nízká\s+hladina)|(?:Low\s+.+))\s+(\d+)%/,
+  pctTimeVeryLow: /(?:(?:Velmi\s+nízká\s+hladina)|(?:Very Low\s+.+))\s+(\d+)%/,
   avgGlucose:
-    /(?:Průměrná hodnota koncentrace glukózy)|(Average Glucose)\s+([\d,]+) mmol\/l/,
+    /(?:(?:Průměrná hodnota koncentrace glukózy)|(?:Average Glucose))\s+([\d,]+) mmol\/l/,
   glucoseStd:
-    /(?:Variabilita hladin glukózy)|(?:Glucose Variability)\s+([\d,.]+)%/,
-  date: /AGP (?:r|R)eport\s+(\d+|.+) (\d+|.+),? 2023 - (\d+|.+) (\d+|.+),? 2023 \(/m,
+    /(?:(?:Variabilita hladin glukózy)|(?:Glucose Variability))\s+([\d,.]+)%/,
+  date: /AGP (?:r|R)eport\s+(\d+|.+) (\d+|.+),? 202(?:\d) - (\d+|.+) (\d+|.+),? 202(?:\d) \(/m,
 };
 
 const stringToNum = (str: string | undefined) => {
