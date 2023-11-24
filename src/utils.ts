@@ -169,10 +169,6 @@ export async function withTemporaryFile<T>(
   }
 }
 
-export function parseCzOrEnFloat(s: string): number {
-  return parseFloat(s.replace(/,/, '.'));
-}
-
 export const stringToNum = (str: string | undefined) => {
   if (str) {
     if (str.includes(",") || str.includes(".")) {

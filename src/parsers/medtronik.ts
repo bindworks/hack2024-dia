@@ -1,5 +1,5 @@
 import { ParsedData } from ".";
-import { parseCzOrEnFloat, pdfToRgb, pdfToText, pdfToTsv, percentToGMI } from "../utils";
+import { stringToNum, pdfToRgb, pdfToText, pdfToTsv, percentToGMI } from "../utils";
 
 export async function medtronik640GParser(pdfPath: string): Promise<ParsedData> {
     const result: ParsedData = {};
@@ -16,7 +16,7 @@ export async function medtronik640GParser(pdfPath: string): Promise<ParsedData> 
     Object.assign(result, other);
     findInText(pdfText, /Množství bazálu \(za den\)\s+(?:((?:\d|,|\.)+)|--)/, (r) => {
       if (r[1]) {
-        result.basalInsulin = parseCzOrEnFloat(r[1])
+        result.basalInsulin = stringToNum(r[1])
       }
     });
     return result;
@@ -37,12 +37,12 @@ export async function medtronik780GParser(pdfPath: string): Promise<ParsedData> 
   Object.assign(result, other);
   findInText(pdfText, /(?:Autom\. bazál \/ bazál\. množství \(za den\)|Auto Basal \/ Basal amount \(per day\))\s+(?:((?:\d|,|\.)+)|--)/, (r) => {
     if (r[1]) {
-      result.basalInsulin = parseCzOrEnFloat(r[1])
+      result.basalInsulin = stringToNum(r[1])
     }
   });
   findInText(pdfText, /(?:Hodnota automat\. korekce \(za den\)|Auto Correction amount \(per day\))\s+(?:((?:\d|,|\.)+)|--)/, (r) => {
     if (r[1]) {
-      result.correctionInsulin = parseCzOrEnFloat(r[1])
+      result.correctionInsulin = stringToNum(r[1])
     }
   });
   return result;
@@ -63,7 +63,7 @@ export async function medtronikGuardianParser(pdfPath: string): Promise<ParsedDa
   Object.assign(result, other);
   findInText(pdfText, /Množství rychle působícího \(za den\)\s+(?:((?:\d|,|\.)+)|--)/, (r) => {
     if (r[1]) {
-      result.basalInsulin = parseCzOrEnFloat(r[1])
+      result.basalInsulin = stringToNum(r[1])
     }
   });
   return result;
@@ -74,23 +74,23 @@ async function parseOtherValues(pdfText: string): Promise<ParsedData> {
 
   findInText(pdfText, /(?:Používání senzoru \(za týden\)|Sensor Wear \(per week\))\s+(\d+)%/, (r) => result.timeActive = parseFloat(r[1]));
   findInText(pdfText, /(?:Průměrná GS ± SD|Average SG ± SD)\s+((?:\d|,|\.)+)\s*±\s*((?:\d|,|\.)+)/, (r) => {
-    result.averageGlucose = parseCzOrEnFloat(r[1]);
-    result.stddevGlucose = parseCzOrEnFloat(r[2]);
+    result.averageGlucose = stringToNum(r[1]);
+    result.stddevGlucose = stringToNum(r[2]);
   });
-  findInText(pdfText, /(?:Variační koeficient \(%\)|Coefficient of Variation \(%\))\s+((?:\d|,|\.)+)%/, (r) => result.variationCoefficient = parseCzOrEnFloat(r[1]));
+  findInText(pdfText, /(?:Variační koeficient \(%\)|Coefficient of Variation \(%\))\s+((?:\d|,|\.)+)%/, (r) => result.variationCoefficient = stringToNum(r[1]));
   findInText(pdfText, /GMI\*\*\*\s+(?:((?:\d|,|\.)+)%\s+\(((?:\d|,|\.)+)|--)/, (r) => {
     if (r[2]) {
-      result.gmi = parseCzOrEnFloat(r[2]);
+      result.gmi = stringToNum(r[2]);
     }
   });
   findInText(pdfText, /(?:Celková denní dávka \(za den\)|Total daily dose \(per day\))\s+(?:((?:\d|,|\.)+)|--)/, (r) => {
     if (r[1]) {
-      result.dailyInsulinDose = parseCzOrEnFloat(r[1])
+      result.dailyInsulinDose = stringToNum(r[1])
     }
   });
   findInText(pdfText, /(?:Množství bolusu \(za den\)|Bolus amount \(per day\)|Množství dlouhodobě působícího \(za den\))\s+(?:((?:\d|,|\.)+)|--)/, (r) => {
     if (r[1]) {
-      result.bolusInsulin = parseCzOrEnFloat(r[1])
+      result.bolusInsulin = stringToNum(r[1])
     }
   });
 
