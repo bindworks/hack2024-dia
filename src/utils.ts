@@ -185,11 +185,23 @@ export const stringToNum = (str: string | undefined) => {
   throw new Error("stringToNum: str is undefined");
 };
 
-export function findInText(text: string, regex: RegExp, assign: (res: RegExpExecArray) => void) {
+export function findInText(
+  text: string,
+  regex: RegExp,
+  assign: (res: RegExpExecArray) => void
+) {
   const match = regex.exec(text);
   if (!match) {
-    throw new Error('No match');
+    throw new Error("No match");
   }
   assign(match);
 }
 
+export function findMissingProperties<T extends object>(obj: T) {
+  return Object.entries(obj)
+    .map(([key, value]) => {
+      return value === undefined ? `Missing property: ${key}` : "";
+    })
+    .filter((x) => x !== "")
+    .join("\n");
+}
