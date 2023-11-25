@@ -1,5 +1,5 @@
 import { ParsedData } from ".";
-import { findMissingProperties, pdfToText, percentToGMI } from "../utils";
+import { findMissingProperties, pdfToText, percentToGMI, stringToNum } from "../utils";
 
 const monthShortcuts = new Map([
   //CZ
@@ -183,14 +183,15 @@ export async function dexcomParser(pdfPath: string): Promise<ParsedData> {
   return {
     periodStart,
     periodEnd,
-    timeInRangeVeryHigh: parseFloat(timeInRange.veryHigh),
-    timeInRangeHigh: parseFloat(timeInRange.high),
-    timeInRangeNormal: parseFloat(timeInRange.moderate),
-    timeInRangeLow: parseFloat(timeInRange.low),
-    timeInRangeVeryLow: parseFloat(timeInRange.veryLow),
+    timeInRangeVeryHigh: stringToNum(timeInRange.veryHigh),
+    timeInRangeHigh: stringToNum(timeInRange.high),
+    timeInRangeNormal: stringToNum(timeInRange.moderate),
+    timeInRangeLow: stringToNum(timeInRange.low),
+    timeInRangeVeryLow: stringToNum(timeInRange.veryLow),
 
-    averageGlucose: parseFloat(glucoseAvg),
-    stddevGlucose: parseFloat(glucoseStdvec),
-    gmi: GMI !== undefined ? percentToGMI(parseFloat(GMI)) : undefined,
+    timeActive: stringToNum(timeAtCGM),
+    averageGlucose: stringToNum(glucoseAvg),
+    stddevGlucose: stringToNum(glucoseStdvec),
+    gmi: GMI !== undefined ? percentToGMI(stringToNum(GMI)) : undefined,
   };
 }

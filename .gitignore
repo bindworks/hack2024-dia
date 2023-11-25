@@ -1,7 +1,10 @@
-DATA
-OTHERDATA
+DATA/
+OTHERDATA/
 *.js
 node_modules
 *.code-workspace
 err.txt
 out.txt
+PARSEALL
+REPORT/
+LATEXTMP/
