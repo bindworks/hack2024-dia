@@ -175,14 +175,14 @@ export async function withTemporaryFile<T>(
   }
 }
 
-export const stringToNum = (str: string | undefined) => {
+export const stringToNum = (str: string | undefined, message = "") => {
   if (str) {
     if (str.includes(",") || str.includes(".")) {
       return parseFloat(str.replace(",", "."));
     }
     return parseInt(str);
   }
-  throw new Error("stringToNum: str is undefined");
+  throw new Error(`stringToNum: str (${message}) is undefined`);
 };
 
 export function findInText(
