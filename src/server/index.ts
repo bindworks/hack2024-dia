@@ -1,12 +1,12 @@
 import { serve } from "@hono/node-server";
 import { unlink, writeFile } from "fs";
 import { Hono } from "hono";
+import { cors } from "hono/cors";
 import { createClassifier } from "../classifier";
 const app = new Hono();
-
+app.use("/*", cors());
 app.post("/", async (c) => {
   const body = await c.req.parseBody();
-  console.log(body);
 
   if (!body.report) return c.json({ error: "No report attached" }, 400);
 
