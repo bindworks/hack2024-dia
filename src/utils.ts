@@ -179,24 +179,43 @@ export async function withTemporaryFile<T>(
   }
 }
 
-export const stringToNum = (str: string | undefined) => {
+export const stringToNum = (str: string | undefined, message = "") => {
   if (str) {
     if (str.includes(",") || str.includes(".")) {
       return parseFloat(str.replace(",", "."));
     }
     return parseInt(str);
   }
-  throw new Error("stringToNum: str is undefined");
+  throw new Error(`stringToNum: str (${message}) is undefined`);
 };
 
-export function findInText(text: string, regex: RegExp, assign: (res: RegExpExecArray) => void) {
+export function findInText(
+  text: string,
+  regex: RegExp,
+  assign: (res: RegExpExecArray) => void
+) {
   const match = regex.exec(text);
   if (!match) {
-    throw new Error('No match');
+    throw new Error("No match");
   }
   assign(match);
 }
 
 export function doThrow(c: () => Error): never {
   throw c();
+}
+
+export function findMissingProperties<T extends object>(
+  obj: T
+): string | undefined {
+  const missingProperties = Object.entries(obj)
+    .map(([key, value]) => {
+      return value === undefined ? key : "";
+    })
+    .filter((x) => x !== "")
+    .join(", ");
+
+  return missingProperties !== ""
+    ? `Missing properties: ${missingProperties}`
+    : undefined;
 }

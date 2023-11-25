@@ -2,7 +2,11 @@ import { ReportParser } from "./parsers";
 import { dexcomParser } from "./parsers/dexcom";
 import { glookoParser } from "./parsers/glooko";
 import { libreAGPParser } from "./parsers/libre";
-import { medtronik640GParser, medtronik780GParser, medtronikGuardianParser } from "./parsers/medtronik";
+import {
+  medtronik640GParser,
+  medtronik780GParser,
+  medtronikGuardianParser,
+} from "./parsers/medtronik";
 import { pdfToText } from "./utils";
 
 export interface Classifier {
@@ -33,8 +37,12 @@ export function createClassifier(): Classifier {
       return medtronikGuardianParser;
     }
 
-    if (pdfContents.indexOf("AGP") > -1) {
+    if (pdfContents.indexOf("AGP") > -1 && pdfContents.indexOf("Libre") > -1) {
       return libreAGPParser;
+    }
+
+    if (pdfContents.indexOf("Snapshot") > -1 && pdfContents.indexOf("Libre") > -1) {
+      throw new Error("Old report - should'nt be parsed");
     }
   }
 }

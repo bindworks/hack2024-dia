@@ -2,3 +2,4 @@ DATA
 OTHERDATA
 *.js
 node_modules
+*.code-workspace
