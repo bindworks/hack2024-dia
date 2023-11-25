@@ -19,12 +19,21 @@ export function createClassifier(): Classifier {
   };
 
   async function classify(pdfPath: string): Promise<ReportParser | undefined> {
-    const pdfContents = await pdfToText(pdfPath, { firstPage: true });
+    const pdfContents = await pdfToText(pdfPath, {
+      firstPage: true,
+      startPage: 1,
+      endPage: 3,
+    });
+
     if (pdfContents.indexOf("Glooko") > -1) {
       return glookoParser;
     }
 
     if (pdfContents.indexOf("Dexcom") > -1) {
+      if (pdfContents.indexOf("Nightscout") > -1) {
+        throw new Error("Old report - should'nt be parsed");
+      }
+
       return dexcomParser;
     }
     if (pdfContents.indexOf("MiniMed 640G") > -1) {
@@ -41,7 +50,10 @@ export function createClassifier(): Classifier {
       return libreAGPParser;
     }
 
-    if (pdfContents.indexOf("Snapshot") > -1 && pdfContents.indexOf("Libre") > -1) {
+    if (
+      pdfContents.indexOf("Snapshot") > -1 &&
+      pdfContents.indexOf("Libre") > -1
+    ) {
       throw new Error("Old report - should'nt be parsed");
     }
   }

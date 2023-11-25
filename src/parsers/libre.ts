@@ -4,19 +4,20 @@ import { months } from "./constants";
 
 export const regexes = {
   pctTimeVeryBig:
-    /(?:(?:Velmi\s+vysoká\s+hladina)|(?:Very\s+High\s+.+))\s+(\d+)%/,
-  pctTimeBig: /(?:(?:Vysoká\s+hladina)|(?:(?<!Very )High\s+.+))\s+(\d+)%/,
+    /(?:(?:Ve[lľ]mi\s+vysoká\s+(?:hladina)?)|(?:Very\s+High\s+.+))\s+(\d+)%/,
+  pctTimeBig: /(?:(?:Vysoká\s+(?:hladina)?)|(?:(?<!Very )High\s+.+))\s+(\d+)%/,
   pctTimeFinish:
-    /(?:(?:Cílové rozmezí)|(?:Target Range (?:3\.9 - 10\.0 mmol\/L)))\s+(\d+)/,
-  pctTimeLow: /(?:(?:Nízká\s+hladina)|(?:Low\s+.+))\s+(\d+)%/,
-  pctTimeVeryLow: /(?:(?:Velmi\s+nízká\s+hladina)|(?:Very Low\s+.+))\s+(\d+)%/,
+    /(?:(?:Cílové rozmezí)|(?:Target Range (?:3\.9 - 10\.0 mmol\/L)?)|(?:Cieľový rozsah))\s+(\d+)%/,
+  pctTimeLow: /(?:(?:Nízk[aá]\s+(?:hladina)?)|(?:Low\s+.+))\s+(\d+)%/,
+  pctTimeVeryLow:
+    /(?:(?:Ve[lľ]mi\s+nízk[aá]\s+(?:hladina)?)|(?:Very Low\s+.+))\s+(\d+)%/,
   avgGlucose:
-    /(?:(?:Průměrná hodnota koncentrace glukózy)|(?:Average Glucose))\s+([\d,.]+)\s+mmol\/L/i,
+    /(?:(?:Průměrná hodnota koncentrace glukózy)|(?:Average Glucose)|(?:Priemerná glukóza))\s+([\d,.]+)\s+mmol\/L/i,
   glucoseStd:
-    /(?:(?:Variabilita hladin glukózy)|(?:Glucose Variability))\s+([\d,.]+)%/,
-  date: /AGP [rR]eport\s+(.+) (.+),? 202(?:\d) - (.+) (.+),? 202(?:\d) \(/m,
+    /(?:(?:Variabilita hladin glukózy)|(?:Glucose Variability)|(?:Variabilita glukózy))\s+([\d,.]+)%/m,
+  date: /(?:AGP [rR]eport|prehľad)\s+(.+) (.+),? 202(?:\d) - (.+) (.+),? 202(?:\d)/m,
   timeActive:
-    /(?:Doba aktivního senzoru:|Time CGM|Sensor Active:)\s+([\d.,]+)%/,
+    /(?:Doba aktivního senzoru:|Time CGM|Sensor Active:|Čas, kedy je senzor aktívny:)\s+([\d.,]+)%/,
   gmi: /\(GMI\)\s+([\d.,]+)%/,
 };
 
@@ -79,11 +80,13 @@ export async function libreAGPParser(pdfPath: string): Promise<ParsedData> {
   const periodStart = new Date(2023, months[startMonth], parseInt(startDay));
   const periodEnd = new Date(2023, months[endMonth], parseInt(endDay));
   const glucoseStd = stringToNum(regexes.glucoseStd.exec(data)?.[1], "stdDev");
+  const stddevGlucose = avgGlucose * (glucoseStd / 100);
   const variationCoefficient = stringToNum(
-    regexes.gmi.exec(data)?.[1],
+    regexes.glucoseStd.exec(data)?.[1],
     "variationCoefficient"
   );
-  const gmi = stringToNum(regexes.gmi.exec(data)?.[1], "gmi");
+  const gmiStr = regexes.gmi.exec(data)?.[1];
+  const gmi = gmiStr ? stringToNum(gmiStr, "gmi") : undefined;
 
   return {
     timeInRangeVeryHigh,
@@ -94,7 +97,7 @@ export async function libreAGPParser(pdfPath: string): Promise<ParsedData> {
     averageGlucose: avgGlucose,
     periodStart,
     periodEnd,
-    stddevGlucose: glucoseStd,
+    stddevGlucose,
     timeActive,
     gmi,
     variationCoefficient,
