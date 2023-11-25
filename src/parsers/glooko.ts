@@ -28,6 +28,10 @@ export async function glookoParser(pdfPath: string): Promise<ParsedData> {
     await parseGlycemiaSummary(pdfPagesContents[glycemiaSummaryPageIndex], summaryTsv);
   }
 
+  if (!hasCgmSummary && !hasGlycemiaSummary) {
+    throw new Error("No known data found");
+  }
+
   return result;
 
   async function parseCgmSummary(summaryContents: string, summaryTsv: PdfTsvRecord[]) {

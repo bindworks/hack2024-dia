@@ -4,15 +4,9 @@ import { stringToNum, pdfToRgb, pdfToText, pdfToTsv, percentToGMI, findInText } 
 export async function medtronik640GParser(pdfPath: string): Promise<ParsedData> {
     const result: ParsedData = {};
     const vir = await parseValuesInRange(pdfPath, 160, 180, 320, 510);
-    if (vir.empty) {
-      return vir;
-    }
     Object.assign(result, vir);
     const pdfText = await pdfToText(pdfPath, { layout: true });
     const other = await parseOtherValues(pdfText);
-    if (other.empty) {
-      return other;
-    }
     Object.assign(result, other);
     findInText(pdfText, /Množství bazálu \(za den\)\s+(?:((?:\d|,|\.)+)|--)/, (r) => {
       if (r[1]) {
@@ -25,15 +19,9 @@ export async function medtronik640GParser(pdfPath: string): Promise<ParsedData> 
 export async function medtronik780GParser(pdfPath: string): Promise<ParsedData> {
   const result: ParsedData = {};
   const vir = await parseValuesInRange(pdfPath, 30, 55, 310, 500);
-  if (vir.empty) {
-    return vir;
-  }
   Object.assign(result, vir);
   const pdfText = await pdfToText(pdfPath, { layout: true });
   const other = await parseOtherValues(pdfText);
-  if (other.empty) {
-    return other;
-  }
   Object.assign(result, other);
   findInText(pdfText, /(?:Autom\. bazál \/ bazál\. množství \(za den\)|Auto Basal \/ Basal amount \(per day\))\s+(?:((?:\d|,|\.)+)|--)/, (r) => {
     if (r[1]) {
@@ -51,15 +39,9 @@ export async function medtronik780GParser(pdfPath: string): Promise<ParsedData> 
 export async function medtronikGuardianParser(pdfPath: string): Promise<ParsedData> {
   const result: ParsedData = {};
   const vir = await parseValuesInRange(pdfPath, 30, 55, 310, 500);
-  if (vir.empty) {
-    return vir;
-  }
   Object.assign(result, vir);
   const pdfText = await pdfToText(pdfPath, { layout: true });
   const other = await parseOtherValues(pdfText);
-  if (other.empty) {
-    return other;
-  }
   Object.assign(result, other);
   findInText(pdfText, /Množství rychle působícího \(za den\)\s+(?:((?:\d|,|\.)+)|--)/, (r) => {
     if (r[1]) {
@@ -117,7 +99,7 @@ async function parseValuesInRange(pdfPath: string, xmin: number, xmax: number, y
   if (valuesInRange.length === 0) {
     const nedostupne = pdfTsv.find(r => r.left > xmin && r.left < xmax + 40 && r.top > ymin && r.top < ymax && r.text === 'Nedostupné');
     if (nedostupne) {
-      return { empty: true };
+      throw new Error('No values in range');
     }
     throw new Error('Could not find values in range');
   }

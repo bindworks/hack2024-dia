@@ -13,5 +13,6 @@
     )
     mkdir -p "REPORT/$(dirname "$FN")"
     pdfunite LATEXTMP/latex.pdf "$FN" "REPORT/$FN"
+    echo "$JSON" > "REPORT/$FN.json"
   fi
 done) < PARSEALL
