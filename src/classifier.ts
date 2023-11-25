@@ -20,7 +20,12 @@ export function createClassifier(): Classifier {
 
   async function classify(pdfPath: string): Promise<ReportParser | undefined> {
     const pdfContents = await pdfToText(pdfPath);
+
     if (pdfContents.indexOf("Dexcom") > -1) {
+      if (pdfContents.indexOf("Nightscout") > -1) {
+        throw new Error("Old report - should'nt be parsed");
+      }
+
       return dexcomParser;
     }
     if (pdfContents.indexOf("MiniMed 640G") > -1) {
