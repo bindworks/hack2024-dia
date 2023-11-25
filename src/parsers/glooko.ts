@@ -1,5 +1,5 @@
 import { ParsedData } from ".";
-import { PdfTsvRecord, findInText, pdfToText, pdfToTsv, stringToNum } from "../utils";
+import { PdfTsvRecord, doThrow, findInText, pdfToText, pdfToTsv, stringToNum } from "../utils";
 import { months } from "./constants";
 
 export async function glookoParser(pdfPath: string): Promise<ParsedData> {
@@ -13,7 +13,7 @@ export async function glookoParser(pdfPath: string): Promise<ParsedData> {
   const hasCgmSummary = cgmSummaryPageIndex > -1;
 
   if (hasCgmSummary) {
-    const summaryTsv = mergeCsv(await pdfToTsv(pdfPath, { startPage: cgmSummaryPageIndex + 1, endPage: cgmSummaryPageIndex + 1 }));
+    const summaryTsv = mergeTsv(await pdfToTsv(pdfPath, { startPage: cgmSummaryPageIndex + 1, endPage: cgmSummaryPageIndex + 1 }));
     await parseCgmSummary(pdfPagesContents[cgmSummaryPageIndex], summaryTsv);
   }
 
@@ -24,7 +24,7 @@ export async function glookoParser(pdfPath: string): Promise<ParsedData> {
   const hasGlycemiaSummary = glycemiaSummaryPageIndex > -1;
 
   if (hasGlycemiaSummary) {
-    const summaryTsv = mergeCsv(await pdfToTsv(pdfPath, { startPage: glycemiaSummaryPageIndex + 1, endPage: glycemiaSummaryPageIndex + 1 }));
+    const summaryTsv = mergeTsv(await pdfToTsv(pdfPath, { startPage: glycemiaSummaryPageIndex + 1, endPage: glycemiaSummaryPageIndex + 1 }));
     await parseGlycemiaSummary(pdfPagesContents[glycemiaSummaryPageIndex], summaryTsv);
   }
 
@@ -92,8 +92,47 @@ export async function glookoParser(pdfPath: string): Promise<ParsedData> {
 
     if (summaryContents.match(/Podrobnosti systému|System Details/)) {
       findInText(summaryContents, /(?:Control-IQ|Bazální-IQ|Auto mode 'On')\s*(?:((?:\d|,|\.)+))/, (r) => result.timeActive = stringToNum(r[1]));
+      const { bolusText, basalText } = findBasalAndBolusValueStrings();
+      result.bolusInsulin = parseBasalBolusValue(bolusText);
+      result.basalInsulin = parseBasalBolusValue(basalText);
+      findInText(summaryContents, /(?:Denní dávka|Insulin\/day|Inzulin\/den|Daily Dose)\s*((?:\d|,|\.)+)\s*(?:jednotky|units)/i, (r) => result.dailyInsulinDose = stringToNum(r[1]));
+
+      function parseBasalBolusValue(value: string): number {
+        const m = /(?:\d|,|\.)+%\s+((?:\d|,|\.)+)\s+(?:units|jednotky)$/.exec(value);
+        if (!m) {
+          throw new Error("Cannot parse " + value);
+        }
+        return stringToNum(m[1]);
+      }
+
+      function findBasalAndBolusValueStrings(): { basalText: string, bolusText: string } {
+        const basalTitle = summaryTsv.find(r => r.text.match(/^(?:Bazál\/den|Basal\/Day)$/)) ?? doThrow(() => new Error("basal not found"));
+        const bolusTitle = summaryTsv.find(r => r.text.match(/^(?:Bolus\/den|Bolus\/Day)$/)) ?? doThrow(() => new Error("bolus not found"));
+        if (Math.abs(basalTitle.left - bolusTitle.left) < 10) {
+          const basalValue = summaryTsv.find(r => Math.abs(r.left - basalTitle.left) < 10 && r.top < basalTitle.top && r.text.match(/(?:\d|,|\.)+%\s+(?:\d|,|\.)+\s+(?:jednotky|units)/));
+          const bolusValue = summaryTsv.find(r => Math.abs(r.left - bolusTitle.left) < 10 && r.top > basalTitle.top && r.top < bolusTitle.top && r.text.match(/(?:\d|,|\.)+%\s+(?:\d|,|\.)+\s+(?:jednotky|units)/));
+          if (!basalValue || !bolusValue) {
+            throw new Error("Cannot find bolus or basal");
+          }
+          return {
+            basalText: basalValue.text,
+            bolusText: bolusValue.text,
+          }
+        } else {
+          const rowsAboveBasal = summaryTsv.filter(r => Math.abs(r.right - basalTitle.right) < 10 && r.top < basalTitle.top).sort(byReverseTop).slice(0, 3).reverse();
+          const rowsAboveBolus = summaryTsv.filter(r => Math.abs(r.left - bolusTitle.left) < 10 && r.top < bolusTitle.top).sort(byReverseTop).slice(0, 3).reverse();
+          return {
+            basalText: rowsAboveBasal.map(r => r.text).join(' '),
+            bolusText: rowsAboveBolus.map(r => r.text).join(' ')
+          }
+        }
+      }
     }
   }
+}
+
+function byReverseTop(left: PdfTsvRecord, right: PdfTsvRecord): number {
+  return right.top - left.top;
 }
 
 function findInCsv(csv: PdfTsvRecord[], minx: number, maxx: number, miny: number, maxy: number, pattern: RegExp, assign: (r: RegExpExecArray) => void) {
@@ -125,7 +164,7 @@ function findInCsvUnder(csv: PdfTsvRecord[], minx: number, maxx: number, miny: n
   throw new Error('Not found')
 }
 
-function mergeCsv(csv: PdfTsvRecord[]): PdfTsvRecord[] {
+function mergeTsv(csv: PdfTsvRecord[]): PdfTsvRecord[] {
   const output: PdfTsvRecord[] = [];
   let previous: PdfTsvRecord | undefined;
   for (let record of csv) {
@@ -148,6 +187,8 @@ function mergeCsv(csv: PdfTsvRecord[]): PdfTsvRecord[] {
 
   function flush() {
     if (previous) {
+      previous.right = previous.left + previous.width;
+      previous.bottom = previous.top + previous.height;
       output.push(previous);
       previous = undefined;
     }

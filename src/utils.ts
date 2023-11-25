@@ -38,6 +38,8 @@ export interface PdfTsvRecord {
   word_num: number;
   left: number;
   top: number;
+  right: number;
+  bottom: number;
   width: number;
   height: number;
   conf: number;
