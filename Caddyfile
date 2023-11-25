@@ -1,0 +1,3 @@
+glucominer.byqwerty.cz {
+  reverse_proxy /* localhost:3000
+}
