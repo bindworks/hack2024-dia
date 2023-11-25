@@ -198,10 +198,13 @@ export function findInText(
 }
 
 export function findMissingProperties<T extends object>(obj: T) {
-  return Object.entries(obj)
-    .map(([key, value]) => {
-      return value === undefined ? `Missing property: ${key}` : "";
-    })
-    .filter((x) => x !== "")
-    .join("\n");
+  return (
+    "Missing properties" +
+    Object.entries(obj)
+      .map(([key, value]) => {
+        return value === undefined ? key : "";
+      })
+      .filter((x) => x !== "")
+      .join(", ")
+  );
 }
