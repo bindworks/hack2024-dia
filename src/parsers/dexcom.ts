@@ -1,57 +1,91 @@
 import { ParsedData } from ".";
-import { pdfToText } from "../utils";
+import { findMissingProperties, pdfToText } from "../utils";
 
-const monthShortcuts = {
-  cz: new Map([
-    ["led", 0],
-    ["úno", 1],
-    ["bře", 2],
-    ["dub", 3],
-    ["kvě", 4],
-    ["čvn", 5],
-    ["čvc", 6],
-    ["srp", 7],
-    ["zář", 8],
-    ["říj", 9],
-    ["lis", 10],
-    ["pro", 11],
-  ]),
-};
+const monthShortcuts = new Map([
+  //CZ
+  ["led", 0],
+  ["úno", 1],
+  ["bře", 2],
+  ["dub", 3],
+  ["kvě", 4],
+  ["čvn", 5],
+  ["čvc", 6],
+  ["srp", 7],
+  ["zář", 8],
+  ["říj", 9],
+  ["lis", 10],
+  ["pro", 11],
+  //SK
+  ["jan", 0],
+  ["feb", 1],
+  ["mar", 2],
+  ["apr", 3],
+  ["máj", 4],
+  ["jún", 5],
+  ["júl", 6],
+  ["aug", 7],
+  ["sep", 8],
+  ["okt", 9],
+  ["nov", 10],
+  ["dec", 11],
+  //EN
+  ["jan", 0],
+  ["feb", 1],
+  ["mar", 2],
+  ["apr", 3],
+  ["may", 4],
+  ["jun", 5],
+  ["jul", 6],
+  ["aug", 7],
+  ["sep", 8],
+  ["oct", 9],
+  ["nov", 10],
+  ["dec", 11],
+]);
 
 const dexcomRegexes = {
-  date: /\S{2}\s*(\d+).\s*(\S{3})\s*(\d{4})/gm,
+  dateCZSK: /\S{2}\s*(\d+).\s*(\S{3})\s*(\d{4})/m,
+  dateEN: /\S{3}\s*(\S{3})\s*(\d{1,2}),\s(\d{4})/m,
   patientNameAndTimeFrame:
-    /(?:Přehled|Súhrn|Overview)\s*(\d+)\s*(?:dny\/dní|dní|days)\s*\|\s*((?:\S{2}\s*\d+\.\s*\S{3}\s*\d{4})|(?:\S{3}\s*\S{3}\s*\d{1,2},\s*\d{4}))\s*-\s*((?:\S{2}\s*\d+\.\s*\S{3}\s*\d{4})|(?:\S{3}\s*\S{3}\s*\d{1,2},\s*\d{4}))\s*(\S+\s*\S+)/gm,
+    /(?:Přehled|Súhrn|Overview)\s*(\d+)\s*(?:dny\/dní|dní|days)\s*\|\s*((?:\S{2}\s*\d+\.\s*\S{3}\s*\d{4})|(?:\S{3}\s*\S{3}\s*\d{1,2},\s*\d{4}))\s*-\s*((?:\S{2}\s*\d+\.\s*\S{3}\s*\d{4})|(?:\S{3}\s*\S{3}\s*\d{1,2},\s*\d{4}))\s*(\S+\s*\S+)/m,
   timeAtCGM:
-    /(?:Dny|Dni|Days)\s*(?:s|with)\s(?:(?:(?:daty|údajmi)\s*CGM)|(?:CGM\s*data))\s*(\d+(?:,\d+)?)\s*%/gm,
+    /(?:Dny|Dni|Days)\s*(?:s|with)\s(?:(?:(?:daty|údajmi)\s*CGM)|(?:CGM\s*data))\s*(\d+(?:,\d+)?)\s*%/m,
   glucoseAvg:
-    /(?:Průměrná|Priemerná|Average)\s*(?:Glukóza|Glucose)\s*(\d+(?:(?:,|.)\d+)?)\s*mmol\/L/gm,
+    /(?:Průměrná|Priemerná|Average)\s*(?:Glukóza|Glucose)\s*(\d+(?:(?:,|.)\d+)?)\s*mmol\/L/m,
   glucoseStdvec:
-    /(?:Směrodatná|Smerodajná|Standard)\s*(?:Odchylka|Odchýlka|Deviation)\s*(\d+(?:(?:,|.)\d+)?)\s*mmol\/L/gm,
-  GMI: /GMI\s*(\d+(?:(?:,|.)\d+)?)\s*%/gm,
+    /(?:Směrodatná|Smerodajná|Standard)\s*(?:Odchylka|Odchýlka|Deviation)\s*(\d+(?:(?:,|.)\d+)?)\s*mmol\/L/m,
+  GMI: /GMI\s*(\d+(?:(?:,|.)\d+)?)\s*%/m,
   timeInRange: {
     veryHigh:
-      /(?:Čas|Doba|Time)\s*(?:v|in)\s*(?:rozmezí|rozsahu|Range)\s*<?(\d+(?:(?:,|.)\d+)?)\s*%\s*(?:Velmi|Veľmi|Very)\s*(?:Vysoký|Vysoké|High)/gm,
-    high: /(?:Velmi|Veľmi|Very)\s*(?:Vysoký|Vysoké|High)\s*<?(\d+(?:(?:,|.)\d+)?)\s*%\s*(?:Vysoký|Vysoké|High)/gm,
+      /(?:Čas|Doba|Time)\s*(?:v|in)\s*(?:rozmezí|rozsahu|Range)\s*<?(\d+(?:(?:,|.)\d+)?)\s*%\s*(?:Velmi|Veľmi|Very)\s*(?:Vysoký|Vysoké|High)/m,
+    high: /(?:Velmi|Veľmi|Very)\s*(?:Vysoký|Vysoké|High)\s*<?(\d+(?:(?:,|.)\d+)?)\s*%\s*(?:Vysoký|Vysoké|High)/m,
     moderate:
-      /(?:Vysoký|Vysoké|High)\s*<?(\d+(?:(?:,|.)\d+)?)\s*%\s*(?:V|In)\s*(?:Rozmezí|Rozsahu|Range)/gm,
-    low: /(?:Rozmezí|Rozsahu|Range)\s*<?(\d+(?:(?:,|.)\d+)?)\s*%\s*(?:Nízká|Nízke|Low)/gm,
+      /(?:Vysoký|Vysoké|High)\s*<?(\d+(?:(?:,|.)\d+)?)\s*%\s*(?:V|In)\s*(?:Rozmezí|Rozsahu|Range)/m,
+    low: /(?:Rozmezí|Rozsahu|Range)\s*<?(\d+(?:(?:,|.)\d+)?)\s*%\s*(?:Nízká|Nízke|Low)/m,
     veryLow:
-      /(?:Nízká|Nízke|Low)\s*<?(\d+(?:(?:,|.)\d+)?)\s*%\s*(?:Velmi|Veľmi|Very)\s*(?:Nízký|Nízke|Low)/gm,
+      /(?:Nízká|Nízke|Low)\s*<?(\d+(?:(?:,|.)\d+)?)\s*%\s*(?:Velmi|Veľmi|Very)\s*(?:Nízký|Nízke|Low)/m,
   },
 };
 
 const parseDate = (date: string): Date => {
-  const dateParsed = dexcomRegexes.date.exec(date);
-  const dateYear = dateParsed?.[3];
-  const dateMonth = dateParsed?.[2];
-  const dateDay = dateParsed?.[1];
+  let dateParsed = dexcomRegexes.dateCZSK.exec(date);
+
+  let dateYear = dateParsed?.[3];
+  let dateMonth = dateParsed?.[2];
+  let dateDay = dateParsed?.[1];
+
+  if (!dateParsed) {
+    dateParsed = dexcomRegexes.dateEN.exec(date);
+    dateYear = dateParsed?.[3];
+    dateDay = dateParsed?.[2];
+    dateMonth = dateParsed?.[1];
+  }
 
   if (!dateYear || !dateMonth || !dateDay) {
     throw new Error("Could not parse Dexcom PDF Date");
   }
 
-  const dateMonthValue = monthShortcuts.cz.get(dateMonth);
+  const dateMonthValue = monthShortcuts.get(dateMonth.toLowerCase());
 
   if (!dateMonthValue) {
     throw new Error("Could not parse Dexcom PDF Date Month");
@@ -89,7 +123,24 @@ export async function dexcomParser(pdfPath: string): Promise<ParsedData> {
     veryLow: dexcomRegexes.timeInRange.veryLow.exec(data)?.[1],
   };
 
+  const errors = findMissingProperties({
+    timeFrame,
+    timeFrameStart,
+    timeFrameEnd,
+    patientName,
+    timeAtCGM,
+    glucoseAvg,
+    glucoseStdvec,
+    GMI,
+    timeInRangeVeryHigh: timeInRange.veryHigh,
+    timeInRangeHigh: timeInRange.high,
+    timeInRangeModerate: timeInRange.moderate,
+    timeInRangeLow: timeInRange.low,
+    timeInRangeVeryLow: timeInRange.veryLow,
+  });
+
   if (
+    errors !== undefined ||
     !timeFrame ||
     !timeFrameStart ||
     !timeFrameEnd ||
@@ -104,7 +155,7 @@ export async function dexcomParser(pdfPath: string): Promise<ParsedData> {
     !timeInRange.low ||
     !timeInRange.veryLow
   ) {
-    throw new Error("Could not parse Dexcom PDF");
+    throw new Error(`Could not parse Dexcom PDF: ${errors}`);
   }
 
   const periodStart = parseDate(timeFrameStart);
