@@ -2,7 +2,6 @@ import { ReportParser } from "./parsers";
 import { dexcomParser } from "./parsers/dexcom";
 import { glookoPatientCopyParser } from "./parsers/glooko";
 import { libreAGPParser } from "./parsers/libre";
-import { libreSnapshotParser } from "./parsers/libre-snapshot";
 import {
   medtronik640GParser,
   medtronik780GParser,
@@ -46,7 +45,7 @@ export function createClassifier(): Classifier {
     }
 
     if (pdfContents.indexOf("Snapshot") && pdfContents.indexOf("Libre") > -1) {
-      return libreSnapshotParser;
+      throw new Error("Old report - should'nt be parsed");
     }
   }
 }
