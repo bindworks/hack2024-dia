@@ -25,7 +25,8 @@ export interface PdfToTextSettings {
   tsv?: boolean;
   raw?: boolean;
   firstPage?: boolean;
-  secondPage?: boolean;
+  startPage?: number;
+  endPage?: number;
 }
 
 export interface PdfTsvRecord {
@@ -83,9 +84,12 @@ export async function pdfToText(
     command.push("-l 1");
   }
 
-  if (settings?.secondPage) {
-    command.push("-f 2");
-    command.push("-l 2");
+  if (settings?.startPage) {
+    command.push(`-f ${settings.startPage}`);
+  }
+
+  if (settings?.endPage) {
+    command.push(`-l ${settings.endPage}`);
   }
 
   command.push(`"${pdfPath}"`);
@@ -193,3 +197,6 @@ export function findInText(text: string, regex: RegExp, assign: (res: RegExpExec
   assign(match);
 }
 
+export function doThrow(c: () => Error): never {
+  throw c();
+}

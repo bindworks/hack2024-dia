@@ -20,6 +20,7 @@ async function main(): Promise<number> {
     console.log(
       `\x1b[31mERROR: ${pdfPath}: ${JSON.stringify({
         error: String(e),
+        ...(e instanceof Error ? { stack: e.stack } : {})
       })}\x1b[0m`
     );
     return 2;

@@ -1,6 +1,6 @@
 import { ReportParser } from "./parsers";
 import { dexcomParser } from "./parsers/dexcom";
-import { glookoPatientCopyParser } from "./parsers/glooko";
+import { glookoParser } from "./parsers/glooko";
 import { libreAGPParser } from "./parsers/libre";
 import { medtronik640GParser, medtronik780GParser, medtronikGuardianParser } from "./parsers/medtronik";
 import { pdfToText } from "./utils";
@@ -15,7 +15,11 @@ export function createClassifier(): Classifier {
   };
 
   async function classify(pdfPath: string): Promise<ReportParser | undefined> {
-    const pdfContents = await pdfToText(pdfPath);
+    const pdfContents = await pdfToText(pdfPath, { firstPage: true });
+    if (pdfContents.indexOf("Glooko") > -1) {
+      return glookoParser;
+    }
+
     if (pdfContents.indexOf("Dexcom") > -1) {
       return dexcomParser;
     }
@@ -28,11 +32,6 @@ export function createClassifier(): Classifier {
     if (pdfContents.indexOf("Guardian™") > -1) {
       return medtronikGuardianParser;
     }
-
-    if (pdfContents.indexOf("Glooko") > -1 && pdfContents.indexOf("KOPIE PACIENTA") > -1) {
-      return glookoPatientCopyParser;
-    }
-
 
     if (pdfContents.indexOf("AGP") > -1) {
       return libreAGPParser;
