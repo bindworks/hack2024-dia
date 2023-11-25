@@ -1,5 +1,5 @@
 import { ParsedData } from ".";
-import { isNumeric, pdfToText, stringToNum } from "../utils";
+import { isNumeric, pdfToText, percentToGMI, stringToNum } from "../utils";
 import { months } from "./constants";
 
 export const regexes = {
@@ -86,7 +86,7 @@ export async function libreAGPParser(pdfPath: string): Promise<ParsedData> {
     "variationCoefficient"
   );
   const gmiStr = regexes.gmi.exec(data)?.[1];
-  const gmi = gmiStr ? stringToNum(gmiStr, "gmi") : undefined;
+  const gmi = gmiStr ? percentToGMI(stringToNum(gmiStr, "gmi")) : undefined;
 
   return {
     timeInRangeVeryHigh,
