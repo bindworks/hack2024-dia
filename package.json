@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "runall": "npx tsc && find ./DATA -type f -name \\*.pdf | xargs -n 1 node src/index",
+    "runall": "npx tsc && find ./DATA -type f -name \\*.pdf | sort | xargs -n 1 node src/index",
     "test": "cross-env TS_NODE_FILES=true mocha -r ts-node/register $EXTRA_MOCHA_OPTS test/**/*.spec.ts"
   },
   "author": "",

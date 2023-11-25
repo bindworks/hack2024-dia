@@ -1,5 +1,5 @@
 import { ParsedData } from ".";
-import { findMissingProperties, pdfToText } from "../utils";
+import { findMissingProperties, pdfToText, percentToGMI } from "../utils";
 
 const monthShortcuts = new Map([
   //CZ
@@ -47,23 +47,30 @@ const dexcomRegexes = {
   dateCZSK: /\S{2}\s*(\d+).\s*(\S{3})\s*(\d{4})/m,
   dateEN: /\S{3}\s*(\S{3})\s*(\d{1,2}),\s(\d{4})/m,
   patientNameAndTimeFrame:
-    /(?:Přehled|Súhrn|Overview)\s*(\d+)\s*(?:dny\/dní|dní|days)\s*\|\s*((?:\S{2}\s*\d+\.\s*\S{3}\s*\d{4})|(?:\S{3}\s*\S{3}\s*\d{1,2},\s*\d{4}))\s*-\s*((?:\S{2}\s*\d+\.\s*\S{3}\s*\d{4})|(?:\S{3}\s*\S{3}\s*\d{1,2},\s*\d{4}))\s*(\S+\s*\S+)/m,
+    /(\d+)\s*(?:dny\/dní|dní|days)\s*\|\s*((?:\S{2}\s*\d+\.\s*\S{3}\s*\d{4})|(?:\S{3}\s*\S{3}\s*\d{1,2},\s*\d{4}))\s*-\s*((?:\S{2}\s*\d+\.\s*\S{3}\s*\d{4})|(?:\S{3}\s*\S{3}\s*\d{1,2},\s*\d{4}))\s*(\S+\s*\S+)/m,
   timeAtCGM:
     /(?:Dny|Dni|Days)\s*(?:s|with)\s(?:(?:(?:daty|údajmi)\s*CGM)|(?:CGM\s*data))\s*(\d+(?:,\d+)?)\s*%/m,
+  timeAtCGMCapturBackup: /Doba\s*aktivního\s*CGM\s*(\d+(?:,\d+)?)\s*%/m,
   glucoseAvg:
-    /(?:Průměrná|Priemerná|Average)\s*(?:Glukóza|Glucose)\s*(\d+(?:(?:,|.)\d+)?)\s*mmol\/L/m,
+    /(?:Průměrná|Priemerná|Average)\s*(?:[Gg](?:lukóza|lucose))\s*(\d+(?:(?:,|.)\d+)?)\s*mmol\/L/m,
+  glucoseAvgCapturBackup:
+    /(?:Průměrná|Priemerná|Average)\s*(?:[Gg](?:lukóza|lucose))\s*Cíl:\s*<?\s*(?:\d+(?:(?:,|.)\d+)?)\s*mmol\/L<?\s*(\d+(?:(?:,|.)\d+)?)\s*mmol\/L/m,
   glucoseStdvec:
     /(?:Směrodatná|Smerodajná|Standard)\s*(?:Odchylka|Odchýlka|Deviation)\s*(\d+(?:(?:,|.)\d+)?)\s*mmol\/L/m,
+  glucoseStdvecCapturBackup:
+    /Variační\s*koeficient\s*Cíl:\s*<?\s*(?:\d+(?:(?:,|.)\d+)?)\s*%\s*<?(\d+(?:(?:,|.)\d+)?)\s*%/m,
   GMI: /GMI\s*(\d+(?:(?:,|.)\d+)?)\s*%/m,
+  GMICapturBackup:
+    /GMI\s*Cíl:\s*<?\s*(?:\d+(?:(?:,|.)\d+)?)\s*%<?\s*(\d+(?:(?:,|.)\d+)?)\s*%/m,
   timeInRange: {
     veryHigh:
-      /(?:Čas|Doba|Time)\s*(?:v|in)\s*(?:rozmezí|rozsahu|Range)\s*<?(\d+(?:(?:,|.)\d+)?)\s*%\s*(?:Velmi|Veľmi|Very)\s*(?:Vysoký|Vysoké|High)/m,
-    high: /(?:Velmi|Veľmi|Very)\s*(?:Vysoký|Vysoké|High)\s*<?(\d+(?:(?:,|.)\d+)?)\s*%\s*(?:Vysoký|Vysoké|High)/m,
+      /<?(\d+(?:(?:,|.)\d+)?)\s*%\s*(?:Velmi|Veľmi|Very)\s*(?:Vysoký|Vysoké|Vysoká|High)/m,
+    high: /<?(\d+(?:(?:,|.)\d+)?)\s*%\s*(?:Vysoký|Vysoké|High)/m,
     moderate:
-      /(?:Vysoký|Vysoké|High)\s*<?(\d+(?:(?:,|.)\d+)?)\s*%\s*(?:V|In)\s*(?:Rozmezí|Rozsahu|Range)/m,
-    low: /(?:Rozmezí|Rozsahu|Range)\s*<?(\d+(?:(?:,|.)\d+)?)\s*%\s*(?:Nízká|Nízke|Low)/m,
+      /<?(\d+(?:(?:,|.)\d+)?)\s*%\s*(?:V|In)\s*(?:Rozmezí|Rozsahu|Range)/m,
+    low: /<?(\d+(?:(?:,|.)\d+)?)\s*%\s*(?:Nízká|Nízke|Low)/m,
     veryLow:
-      /(?:Nízká|Nízke|Low)\s*<?(\d+(?:(?:,|.)\d+)?)\s*%\s*(?:Velmi|Veľmi|Very)\s*(?:Nízký|Nízke|Low)/m,
+      /<?(\d+(?:(?:,|.)\d+)?)\s*%\s*(?:Velmi|Veľmi|Very)\s*(?:Nízký|Nízke|Low)/m,
   },
 };
 
@@ -87,7 +94,7 @@ const parseDate = (date: string): Date => {
 
   const dateMonthValue = monthShortcuts.get(dateMonth.toLowerCase());
 
-  if (!dateMonthValue) {
+  if (dateMonthValue === undefined) {
     throw new Error("Could not parse Dexcom PDF Date Month");
   }
 
@@ -101,7 +108,7 @@ const parseDate = (date: string): Date => {
 };
 
 export async function dexcomParser(pdfPath: string): Promise<ParsedData> {
-  const data = await pdfToText(pdfPath, { raw: true });
+  const data = await pdfToText(pdfPath, { raw: true, firstPage: true });
 
   const patientNameAndTimeFrame =
     dexcomRegexes.patientNameAndTimeFrame.exec(data);
@@ -111,10 +118,12 @@ export async function dexcomParser(pdfPath: string): Promise<ParsedData> {
   const timeFrameEnd = patientNameAndTimeFrame?.[3];
   const patientName = patientNameAndTimeFrame?.[4];
 
-  const timeAtCGM = dexcomRegexes.timeAtCGM.exec(data)?.[1];
-  const glucoseAvg = dexcomRegexes.glucoseAvg.exec(data)?.[1];
-  const glucoseStdvec = dexcomRegexes.glucoseStdvec.exec(data)?.[1];
-  const GMI = dexcomRegexes.GMI.exec(data)?.[1];
+  let timeAtCGM = dexcomRegexes.timeAtCGM.exec(data)?.[1];
+  let glucoseAvg = dexcomRegexes.glucoseAvg.exec(data)?.[1];
+  let glucoseStdvec = dexcomRegexes.glucoseStdvec.exec(data)?.[1];
+  let variationCoefficient: string | undefined = undefined;
+  let GMI = dexcomRegexes.GMI.exec(data)?.[1];
+
   const timeInRange = {
     veryHigh: dexcomRegexes.timeInRange.veryHigh.exec(data)?.[1],
     high: dexcomRegexes.timeInRange.high.exec(data)?.[1],
@@ -122,6 +131,18 @@ export async function dexcomParser(pdfPath: string): Promise<ParsedData> {
     low: dexcomRegexes.timeInRange.low.exec(data)?.[1],
     veryLow: dexcomRegexes.timeInRange.veryLow.exec(data)?.[1],
   };
+
+  if (!GMI) {
+    GMI = dexcomRegexes.GMICapturBackup.exec(data)?.[1];
+  }
+
+  if (!timeAtCGM) {
+    timeAtCGM = dexcomRegexes.timeAtCGMCapturBackup.exec(data)?.[1];
+  }
+
+  if (!glucoseAvg) {
+    glucoseAvg = dexcomRegexes.glucoseAvgCapturBackup.exec(data)?.[1];
+  }
 
   const errors = findMissingProperties({
     timeFrame,
@@ -131,7 +152,6 @@ export async function dexcomParser(pdfPath: string): Promise<ParsedData> {
     timeAtCGM,
     glucoseAvg,
     glucoseStdvec,
-    GMI,
     timeInRangeVeryHigh: timeInRange.veryHigh,
     timeInRangeHigh: timeInRange.high,
     timeInRangeModerate: timeInRange.moderate,
@@ -148,7 +168,6 @@ export async function dexcomParser(pdfPath: string): Promise<ParsedData> {
     !timeAtCGM ||
     !glucoseAvg ||
     !glucoseStdvec ||
-    !GMI ||
     !timeInRange.veryHigh ||
     !timeInRange.high ||
     !timeInRange.moderate ||
@@ -172,6 +191,6 @@ export async function dexcomParser(pdfPath: string): Promise<ParsedData> {
 
     averageGlucose: parseFloat(glucoseAvg),
     stddevGlucose: parseFloat(glucoseStdvec),
-    gmi: parseFloat(GMI),
+    gmi: GMI !== undefined ? percentToGMI(parseFloat(GMI)) : undefined,
   };
 }
