@@ -56,5 +56,7 @@ export function createClassifier(): Classifier {
     ) {
       throw new Error("Old report - should'nt be parsed");
     }
+
+    throw new Error("Could not identify report");
   }
 }
