@@ -7,7 +7,16 @@ import { createClassifier } from "../classifier";
 const app = new Hono();
 app.use("/*", cors());
 
-app.use("/*", serveStatic({ root: "./dist" }));
+app.use(
+  "/*",
+  serveStatic({
+    root: "./dist",
+    rewriteRequestPath(path) {
+      if (path.includes(".")) return path;
+      return "/index.html";
+    },
+  })
+);
 app.post("/api/scan", async (c) => {
   const body = await c.req.parseBody();
 
