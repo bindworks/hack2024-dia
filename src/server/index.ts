@@ -13,6 +13,7 @@ app.use(
     root: "./dist",
     rewriteRequestPath(path) {
       if (path.includes(".")) return path;
+      if (path.includes("api")) return path;
       return "/index.html";
     },
   })
