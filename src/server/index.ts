@@ -22,20 +22,24 @@ app.use(
 app.post("/api/scan", async (c) => {
   const body = await c.req.parseBody();
 
-  if (!body.report) return c.json({ error: "No report attached" }, 400);
+  if (!body.report)
+    return c.json(
+      { error: "Nepodařilo se najít report, zkontrolujte že jste ho nahráli" },
+      400
+    );
 
   if (!(body.report instanceof Blob))
-    return c.json({ error: "Report must be a file" }, 400);
+    return c.json({ error: "Report musí být soubor" }, 400);
 
   const bytes = await body.report.arrayBuffer();
   const buffer = Buffer.from(bytes);
 
   try {
     writeFile("./report.pdf", buffer, (err) => {
-      if (err) throw new Error("Failed to save report");
+      if (err) throw new Error("Nepodařilo se uložit report");
     });
   } catch (err) {
-    return c.json({ error: "Failed to save report" }, 500);
+    return c.json({ error: "Nepodařilo se uložit report" }, 500);
   }
 
   const classifier = createClassifier();
@@ -43,11 +47,13 @@ app.post("/api/scan", async (c) => {
   const parser = await classifier
     .classify("./report.pdf")
     .catch((err) => console.log(err));
-  if (!parser) return c.json({ error: "Failed to classify report" }, 500);
+  if (!parser)
+    return c.json({ error: "Tento typ reportu ještě neumíme zpracovat" }, 500);
 
   // TODO: Do manual try catch not .catch
   const data = await parser("./report.pdf").catch(console.log);
-  if (!data) return c.json({ error: "Failed to parse report" }, 500);
+  if (!data)
+    return c.json({ error: "Nepodařilo se vytěžit informace z reportu" }, 500);
 
   unlink("./report.pdf", (err) => {
     if (err) console.warn("FAILED TO DELETE FILE", err);
