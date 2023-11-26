@@ -2,6 +2,6 @@ glucominer.byqwerty.cz {
   reverse_proxy /* localhost:3000
 }
 
-https://glucominer.mesh.sk {
+https://glucominer.mesh.sk/* {
   reverse_proxy /* localhost:3000
 }

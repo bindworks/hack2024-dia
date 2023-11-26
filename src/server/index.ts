@@ -34,6 +34,7 @@ app.post("/api/scan", async (c) => {
     .catch((err) => console.log(err));
   if (!parser) return c.json({ error: "Failed to classify report" }, 500);
 
+  // TODO: Do manual try catch not .catch
   const data = await parser("./report.pdf").catch(console.log);
   if (!data) return c.json({ error: "Failed to parse report" }, 500);
 
