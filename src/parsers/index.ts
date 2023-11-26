@@ -60,3 +60,19 @@ export interface ParsedData {
 }
 
 export type ReportParser = (pdfPath: string) => Promise<ParsedData>;
+
+export function postProcessData(data: ParsedData): ParsedData {
+  const newData = {
+    ...data
+  };
+
+  if (newData.averageGlucose) {
+    if (newData.stddevGlucose && !newData.variationCoefficient) {
+      newData.variationCoefficient = newData.stddevGlucose / newData.averageGlucose * 100;
+    } else if (newData.variationCoefficient && !newData.stddevGlucose) {
+      newData.stddevGlucose = newData.variationCoefficient / 100 * newData.averageGlucose;
+    }
+  }
+
+  return newData;
+}

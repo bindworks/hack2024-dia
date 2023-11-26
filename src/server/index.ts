@@ -4,6 +4,7 @@ import { unlink, writeFile } from "fs";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { createClassifier } from "../classifier";
+import { postProcessData } from "../parsers";
 const app = new Hono();
 app.use("/*", cors());
 
@@ -52,7 +53,7 @@ app.post("/api/scan", async (c) => {
     if (err) console.warn("FAILED TO DELETE FILE", err);
   });
 
-  return c.json(data, 200);
+  return c.json(postProcessData(data), 200);
 });
 
 serve(app, console.log);

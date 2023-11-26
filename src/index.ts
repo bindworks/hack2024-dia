@@ -1,4 +1,5 @@
 import { createClassifier } from "./classifier";
+import { postProcessData } from "./parsers";
 
 async function main(): Promise<number> {
   const pdfPath = process.argv[2];
@@ -11,7 +12,7 @@ async function main(): Promise<number> {
       );
       return 1;
     }
-    const data = await parser(pdfPath);
+    const data = postProcessData(await parser(pdfPath));
     console.log(`SUCCESS\t${pdfPath}\t${JSON.stringify(data)}`);
     return 0;
   } catch (e) {
